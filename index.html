@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- refer to https://201419.github.io/ -->
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="None">
+
+		<link rel="shortcut icon" href="img/favicon.ico">
+		<title>Xueldor's Home</title>
+		<link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet'
+		 type='text/css'>
+
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap-treeview/1.2.0/bootstrap-treeview.min.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
+		<link rel="stylesheet" href="css/font-awesome.css" type="text/css" />
+		<link rel="stylesheet" href="css/theme.css" type="text/css" />
+
+		<script src="js/jquery-2.1.1.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+		<script src="https://cdn.bootcss.com/bootstrap-treeview/1.2.0/bootstrap-treeview.min.js"></script>
+
+		<script src="articleIndexes.js"></script>
+
+		<script>
+			function setIframeHeight(iframe) {
+				if (iframe) {
+					var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
+					if (iframeWin.document.body) {
+						iframe.height = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
+					}
+					var subpagestatus = iframeWin.pagestatus;
+					if(subpagestatus == 404){
+						console.info("界面不存在。试着把子界面链接后缀html改成md看看。")
+						console.info("如果md可以打开，但现实是文本形式，可以Chrome安装md插件浏览。")
+					}
+				}
+			};
+			$(function() {
+				var contentFrame = $('#subcontent');
+				//参阅文档https://github.com/jonmiles/bootstrap-treeview
+			    $('#treeview1').treeview({
+					backColor: "#FFFFFF",
+			        color: "#428bca",
+					expandIcon: 'glyphicon glyphicon-chevron-right',
+					collapseIcon: 'glyphicon glyphicon-chevron-down',
+			        enableLinks: false,
+					showTags: true,
+					onNodeSelected: function (event, data) {
+						console.log('you selected node ' + data.nodeId);
+						var linkPath;
+						if(data.postfix=='.md') linkPath = data['filePath'] + data.text + ".html"
+						else linkPath = data['filePath'] + data.text + data.postfix
+						//在iframe中打开页面
+						if(contentFrame.attr('src') !=linkPath){
+							contentFrame.attr('src',linkPath);
+							$('#welcome-to-my-docs').remove()
+						}
+					},
+			        data: getTree()
+			    });
+				function getTree(){
+					var data = [];
+					insertDataNode(data, indexes)
+					console.info(JSON.stringify(data))
+					return data;
+				}
+				function insertDataNode(nodes,indexInfo){
+					$.each(indexInfo,function(index,item){
+					  for(var name in item){
+						  var fileName = name.substring(name.lastIndexOf('/') + 1)
+						  var filePath = name.substring(0, name.lastIndexOf('/') + 1)
+						  var simpleName = fileName;
+						  var postfix = ''
+						  if(fileName.lastIndexOf('.') > 1){
+							simpleName = fileName.substring(0,fileName.lastIndexOf('.'))
+							postfix = fileName.substring(fileName.lastIndexOf('.'))
+						  }
+						  var newnode = {
+							  text: simpleName,
+							  selectable: false,
+							  state: {
+								checked: false,
+								expanded: false
+							  }
+						  };
+						  //js里0 == ""、0 == "\n"、[]==0、'     '==0都是true,所以要先判断是否数字
+						  if($.isNumeric(item[name]) && item[name] == 0){
+							  //leaf
+							  newnode["icon"] = 'icon-tag'
+							  newnode['selectable'] = true;
+							  //自定义几个属性提供给nodeSelect事件
+							  newnode['postfix'] = postfix
+							  newnode['filePath'] = filePath
+							  nodes.push(newnode)
+						  }else{
+							  newnode["tags"] = [item[name].length]
+							  newnode["nodes"] = [];
+							  insertDataNode(newnode["nodes"],item[name])
+							  nodes.push(newnode)
+						  }
+					  }
+					});
+				}
+		});
+	</script>
+	</head>
+
+	<body>
+		<nav class="nav-side">
+			<div class="side-nav-search">
+				<a href="." class="icon icon-home"> My Article</a>
+				<div role="search">
+					<form id="rtd-search-form" action="./search.html" method="get">
+						<input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+					</form>
+				</div>
+			</div>
+			<div class="nav-tree-wrap col-sm-12">
+				<div id="treeview1">
+				</div>
+			</div>
+		</nav>
+
+		<div class="content">
+			<div role="main">
+				<h1 id="welcome-to-my-docs">Welcome to my blog.</h1>
+				<iframe style="min-height:100%;border:none;left: 0px;top:0px;width: 100%;" frameborder="0" name="main_content" id="subcontent"
+				 onload="setIframeHeight(this)"></iframe>
+			</div>
+
+			<footer>
+				<div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+					<a href="javascript:alert('还没实现')" class="btn btn-neutral float-right" title="Review Lists">Next <span class="icon icon-circle-arrow-right"></span></a>
+				</div>
+			</footer>
+		</div>
+
+	</body>
+</html>
