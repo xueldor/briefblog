@@ -143,7 +143,9 @@ Robolectric 会模拟 Android 4.1（API 级别 16）或更高版本的运行时�
 - 主线程，也称为“界面线程”或“Activity 线程”，界面交互和 Activity 生命周期事件发生在此线程上。
 - 插桩线程，大多数测试都在此线程上运行。当您的测试套件开始时，`AndroidJUnitTest` 类将启动此线程。
 
-如果您需要在主线程上执行某个测试，请使用 [`@UiThreadTest`](https://developer.android.google.cn/reference/androidx/test/annotation/UiThreadTest) 注释该测试。
+如果您需要在主线程上执行某个测试，请使用 [`@UiThreadTest`](https://developer.android.google.cn/reference/androidx/test/annotation/UiThreadTest) 注释该测试。该注释只对Test`, `Before` or `After有效。
+
+也可以用`InstrumentationRegistry.getInstrumentation().runOnMainSync`将一块代码发到主线程执行。
 
 ## build.gradle
 
@@ -182,8 +184,19 @@ Android Studio中引入Robolectric 或者AndroidX Test ，只需要在build.grad
 
 1、公司共享盘上的视频
 
-2、 android的官网教程
+2、 android的官网教程:
 
-4、 https://chriszou.com/2016/08/06/android-unit-testing-async/
+​	https://developer.android.google.cn/training/testing/unit-testing/instrumented-unit-tests
+​	https://developer.android.google.cn/training/testing/junit-runner
+
+​	https://developer.android.google.cn/studio/test/?hl=zh-cn
+
+​	https://source.android.google.cn/compatibility/tests/development/instr-self-e2e?hl=zh-cn
 
 5、 http://doc.yonyoucloud.com/doc/wiki/project/android-weekly/issue-145/parameterized-testing-with-robolectric.html
+
+6 、android官方的测试示例，涵盖Espresso的各个组件、UiAutomator 、AndroidJUnitRunner 、JUnit4 Rules等等：
+
+https://github.com/android/testing-samples
+
+7、http://robolectric.org/

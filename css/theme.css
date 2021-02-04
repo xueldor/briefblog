@@ -60,11 +60,16 @@ nav.nav-side {
 .list-group-item.node-treeview1 a:hover{
 	text-decoration: none;
 }
+html,
+body {
+	height: 100%;
+}
 .content {
 	padding: 1.618em 3.236em;
 	height: 100%;
 	max-width: 800px;
-	margin: auto
+	min-height: 50rem;
+	margin-left: 300px;
 }
 .grid-for-nav {
 	position: absolute;

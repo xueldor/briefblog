@@ -85,7 +85,7 @@ public class ShadowFoo {
 
  
 
-2、在android studio的test目录下新建文件夹resources。resources目录下面按照包名新建目录，然后新建文件robolectric.properties，robolectric会自动扫描从根目录到包路径的每个目录。也就是说robolectric.properties文件可以放在resources目录、resources\com目录、resources\com\hsae目录等。
+2、在android studio的test目录下新建文件夹resources。resources目录下面按照**testcase的包路径**新建目录，然后新建文件robolectric.properties，robolectric会自动扫描从根目录到包路径的每个目录。举例来说，假设你的用例放在com.hsae.os.AbcTest里，那么robolectric.properties文件可以放在resources目录、resources\com目录、resources\com\hsae目录、resources\com\hsae\os目录。不要误认为ShadowFoo或Foo的路径。
 
 将：
 
@@ -103,7 +103,19 @@ public class ShadowFoo {
 public class FooTest {xxxxx}
 ````
 
-如果这个shadow被许多TestClass用到，最好还是放到resources里，只要写一次。
+如果这个shadow被许多TestClass用到，最好还是放到resources里，避免每个TestClass都要写一次。
+
+假设Foo有两个shadow，packageA里的Test用的shadow1，packageB里的Tests用的shadow2,那么我只要在resources目录建立packageA和packageB，分别放各自的robolectric.properties。
+
+robolectric.properties与@Config的等价的，@Config的其它参数也可以写到robolectric.properties里。比如：
+
+```properties
+manifest=com/hsae/core/os/AndroidManifest.xml
+sdk=NEWEST_SDK
+shadows=com.hsae.uart.ShadowMcuDaemon
+```
+
+那么在启动APP时就会对应路径下的AndroidManifest.xml代替APP原来的AndroidManifest.xml。这个AndroidManifest.xml放在test/resources/com/hsae/core/os/下面。
 
  
 
@@ -194,5 +206,46 @@ public void __constructor__() {//前后各有两个下划线
 
 
 
+12、Robolectric 从4.0版本开始，已经可以跟安卓的官方测试库兼容了。你可以在build.gradle里面添加：
 
-12、更多参阅robolectric官网教程http://robolectric.org/
+```groovy
+    testImplementation "androidx.test:core:1.3.0"
+    testImplementation 'androidx.test:runner:1.3.0'
+    testImplementation 'androidx.test:rules:1.3.0'
+```
+
+@RunWith注解既可以写RobolectricTestRunner，也可以写AndroidJUnit4：
+
+```
+@RunWith(AndroidJUnit4.class)
+// or @RunWith(RobolectricTestRunner.class)
+@Config(sdk = 28,shadows = {ShadowMcuDaemon.class})
+```
+
+然后在TestClass里既能用androidx的工具，又能用Robolectric提供的工具。Like this:
+
+```java
+@Test
+@MediumTest
+public void testService() throws TimeoutException {
+    //来自androidx.test.core
+    Context applicationContext = ApplicationProvider.getApplicationContext();
+    Intent serviceIntent = new Intent(applicationContext, AutoService.class);
+    serviceRule.startService(serviceIntent);//rule来自androidx.test.rule
+    serviceRule.bindService(serviceIntent);//bind服务
+    
+    //来自robolectric
+    ServiceController<AutoService> controller = Robolectric.buildService(AutoService.class);
+    
+    //来自androidx和Robolectric获取的applicationContext是一样的
+    System.out.println(applicationContext == controller.get().getApplicationContext());//true
+
+    controller.create().startCommand(1,1);//start service
+}
+```
+
+
+
+
+
+13、更多参阅robolectric官网教程http://robolectric.org/
