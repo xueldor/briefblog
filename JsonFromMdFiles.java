@@ -13,8 +13,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * GenArticleIndex.jarå·¥å…·çš„æºä»£ç 
- * myarticleç›®å½•çš„å¹³çº§ç›®å½•æ‰§è¡Œ java -jar GenArticleIndex.jar
+ * GenArticleIndex.jar¹¤¾ßµÄÔ´´úÂë
+ * myarticleÄ¿Â¼µÄÆ½¼¶Ä¿Â¼Ö´ĞĞ java -jar GenArticleIndex.jar
  */
 public class JsonFromMdFiles {
 	private static String dir = "myarticle";
@@ -53,7 +53,7 @@ public class JsonFromMdFiles {
 		Collections.sort(fArrayList, new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
-				//å‡è®¾æŒ‰ç…§01-nameçš„æ ¼å¼ã€‚éæ­¤ä¸ªæ ¼å¼çš„æ”¾åˆ°æœ€åé¢ã€‚
+				//¼ÙÉè°´ÕÕ01-nameµÄ¸ñÊ½¡£·Ç´Ë¸ö¸ñÊ½µÄ·Åµ½×îºóÃæ¡£
 				int ai = Integer.MAX_VALUE;
 				int bi = Integer.MAX_VALUE;
 				
@@ -76,20 +76,20 @@ public class JsonFromMdFiles {
 				return ai - bi;
 			}
 		});
-		//æ‹¼æ¥jsonï¼ŒfArrayListæ˜¯æ•°ç»„ï¼Œæ‰€ä»¥'append ['
+		//Æ´½Ójson£¬fArrayListÊÇÊı×é£¬ËùÒÔ'append ['
 		sbJson.append('[');
 		String path = f.getPath() + '/';
 		for (String string : fArrayList) {
 			File sub = new File(path + string);
 			if(sub.isDirectory()) {
-				//å¿½ç•¥ä¸åŒ…å«æœ‰æ•ˆæ–‡ä»¶çš„ç›®å½•
+				//ºöÂÔ²»°üº¬ÓĞĞ§ÎÄ¼şµÄÄ¿Â¼
 				if(effectiveChildNum(sub) > 0) {
 					sbJson.append("{\"" +path.replaceAll("\\\\", "/") + string + "\":");
 					searchFile(sub);
 					sbJson.append("},");
 				}
 			}else if(sub.isFile()){
-				//å¿½ç•¥åç¼€ä¸æ˜¯suffixè§„å®šåç¼€çš„æ–‡ä»¶
+				//ºöÂÔºó×º²»ÊÇsuffix¹æ¶¨ºó×ºµÄÎÄ¼ş
 				for (String suf : suffix) {
 					if(string.endsWith(suf)) {
 						sbJson.append("{\"" +path.replaceAll("\\\\", "/") + string + "\":0},");
@@ -108,7 +108,7 @@ public class JsonFromMdFiles {
 	private static int effectiveChildNum(File dir) {
 		int total = 0;
 		
-		ArrayList<File> stack = new ArrayList<>();//å€ŸåŠ©æ ˆæ¶ˆé™¤é€’å½’
+		ArrayList<File> stack = new ArrayList<>();//½èÖúÕ»Ïû³ıµİ¹é
 		stack.add(dir);
 		for(int j = 0;j < stack.size(); j++) {
 			File cur = stack.get(j);
@@ -125,7 +125,7 @@ public class JsonFromMdFiles {
 							}
 						}
 					}else if (each.isDirectory()) {
-						//éå†listæ—¶ï¼Œåªå¾€æœ«å°¾æ·»åŠ æ–°å…ƒç´ æ˜¯å¯ä»¥çš„ã€‚
+						//±éÀúlistÊ±£¬Ö»ÍùÄ©Î²Ìí¼ÓĞÂÔªËØÊÇ¿ÉÒÔµÄ¡£
 						stack.add(each);
 					}
 				}
