@@ -348,6 +348,8 @@ aapt2.exe W 02-22 19:55:26  2012 10952 ApkAssets.cpp:138] resources.arsc in APK 
 ![image-20210222195752105](00-构建apk/image-20210222195752105.png)
 
 
+## MultiDex
+Android 应用打包成 apk 文件时，通常里面有一个 class.dex 文件，由于 Android 的 65K 问题（不要纠结是 64K 还是 65K），使用 MultiDex 就会生成多个 dex 文件。
 
 
 
