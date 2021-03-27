@@ -629,7 +629,7 @@ class A{
         //输出 method1 A@5361ecad A@5361ecad A@5361ecad A$_method1_closure3@5289d982}，并且编译会产生_method1_closure2、_method1_closure2两个内部类
         //双引号里的${}表示对里面的表达式求值，里面再套一个{this}则定义闭包，所以${ {this}.toString() }对应输出是A$_method1_closure3可以理解。
         //但是为什么${{this}}对应输出仍然是A呢？
-        println "method1 $this ${this} ${{this}} ${{this}.toString()}" 
+        println "method1 $this ${this} ${{this}} ${ {this}.toString() }" 
         
         //method1 null 7 null ConsoleScript22$_run_closure3@5b71215a，这个例子表明，$表达式里只有一个闭包对象时，闭包会执行（参数传空），返回值作为${}表达式的值。
         //如果把闭包看作对象，那么这种行为有点反直觉;但是看作函数指针的话，也勉强能理解。平时避免这样写就是了
