@@ -633,7 +633,7 @@ class A{
         
         //method1 null 7 null ConsoleScript22$_run_closure3@5b71215a，这个例子表明，$表达式里只有一个闭包对象时，闭包会执行（参数传空），返回值作为${}表达式的值。
         //如果把闭包看作对象，那么这种行为有点反直觉;但是看作函数指针的话，也勉强能理解。平时避免这样写就是了
-        println "method1 ${} ${{7}} ${{}} ${{}.toString()}"
+        println "method1 ${} ${{7}} ${{}} ${ {}.toString() }"
         
         //接上，基于groovy3.0.7, 第一个输出xxx   (回车) yyy （回车）method1 
         //第二行输出xxx   (回车) yyy （回车）zzzz （回车） method1 
