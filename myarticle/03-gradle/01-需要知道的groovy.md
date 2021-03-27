@@ -16,19 +16,35 @@ groovy编译成class文件，以至于jvm不知道是正在运行的代码是jav
 
 ## Groovy 开发环境
 
-根据[ Groovy 官网](http://www.groovy-lang.org/download.html#gvm)的介绍,在 Ubuntu 或者 cygwin 之类的地方：
+**Ubuntu**
+
+在 Ubuntu 可以借助一些管理sdk的工具：
 
 - curl -s get.gvmtool.net | bash
-
 - source “$HOME/.gvm/bin/gvm-init.sh”
-
 - gvm install groovy
 
+或者
 
+* curl -s get.sdkman.io | bash
+* source "$HOME/.sdkman/bin/sdkman-init.sh"
+* sdk install groovy
 
-window下载压缩包，解压，然后配置GROOVY_HOME，添加到PATH。
+sdkman或者gvm是什么自行百度。其中groovy官网介绍了sdkman，我推荐尽量用官网的方式。
 
-cmd里面groovy -v测试配置成功。
+官网地址`https://groovy.apache.org/download.html#distro`，介绍的安装方式还有`$ sudo snap install groovy --classic`等等，自行查阅。
+
+或者也可以直接到官网下载SDK压缩包。我们选择“SDK bundle”,因为包含了doc和src。如果不需要源码和文档，你就下载“binary”。
+
+下载下来后解压，bin目录下的脚本，分为带有后缀.bat的，和不带后缀的。window环境运行bat，linux环境执行不带后者的。
+
+**Windows**
+
+Windows也可以用SDKMAN，也可以直接下载sdk压缩包。还可以选择下载windows安装包。
+
+假设你下载的压缩包，请解压，然后配置GROOVY_HOME，添加到PATH。
+
+cmd里面执行groovy -v测试配置成功。
 
 
 
@@ -36,7 +52,9 @@ IntelliJ IDEA可以支持写Groovy，不需要安装任何东西。
 
 ## 执行
 
-方法1 cmd下启动groovyconsole，代码拷进去，然后按ctrl+R执行。
+方法1 命令行下启动groovyConsole，代码拷进去，然后按ctrl+R执行。
+
+​         windows不区分大小写，所以groovyconsole也可以起来。
 
 方法2 新建文件，后缀为groovy（习惯而已，不是强制要求）。保存代码。执行groovy file。
 
@@ -416,11 +434,12 @@ def bb = ({print "xxxxx ";return 7}({}))
 println bb
 
 //3.
-//bb是一个闭包对象，但是bb出现在双引号里的$表达式里，虽然没有显式的调用，依然会执行此闭包里的语句，却没有返回值
+//bb是一个闭包对象，但是bb出现在双引号里的$表达式里，虽然没有显式的调用，依然会执行此闭包里的语句
 def bb = {print 'bb';return "abcd"}
-println " xxx ${bb}  " + bb //输出 bb xxx   ConsoleScript17$_run_closure1@7cbf3748
-println " xxx ${bb()}  " + bb//输出 bb xxx abcd  ConsoleScript17$_run_closure1@7cbf3748
-
+println " xxx ${bb}  " + bb //tag1 输出 bb xxx   ConsoleScript17$_run_closure1@7cbf3748
+println " xxx ${bb()}  " + bb//tag2 输出 bb xxx abcd  ConsoleScript17$_run_closure1@7cbf3748
+println " xxx ${{print 'bb';return "abcd"}} "//tag3 输出 bb xxx abcd 
+//所以tag1没有输出abcd，tag3会输出。为什么有这种区别呢？后文还会继续讨论相关话题，引出更多迷惑现象，最终结论是避免这样写。
 ```
 
 
@@ -543,7 +562,7 @@ printx()
 
 反编译的代码中有很多$getCallSiteArray，所有的方法调用都变成了CallSite的调用。我们好像没有看到$getCallSiteArray的定义，这是反编译工具的问题。似乎所有的反编译工具都不会把$开头的方法和字段显示出来，包括jdk里面自带的javap命令。我不知道是不是$符号有什么特别的含义。但是我发现XJad这个工具可以把$开头的那些属性和方法全部显示出来。另外也可以用字节码查看器/修改器看到这些隐藏起来的方法。
 
-讨论那个反编译工具更好用没有意义，只是在这个场景下，以研究groovy为目的，我建议用XJad或者Bytecode-Viewer.jar(从https://github.com/Konloch/bytecode-viewer/releases下载最新版，java -jar启动GUI)。
+讨论哪个反编译工具更好用没有意义，只是在这个场景下，以研究groovy为目的，我建议用XJad或者Bytecode-Viewer.jar(从https://github.com/Konloch/bytecode-viewer/releases下载最新版，java -jar启动GUI)。
 
 举一个例子：
 
@@ -608,12 +627,20 @@ class A{
         
         //2.
         //输出 method1 A@5361ecad A@5361ecad A@5361ecad A$_method1_closure3@5289d982}，并且编译会产生_method1_closure2、_method1_closure2两个内部类
-        //双引号里的${}表示对里面的表达式求值，里面再套一个{this}则定义闭包，所以${{this}.toString()}}对应输出是A$_method1_closure3可以理解。
+        //双引号里的${}表示对里面的表达式求值，里面再套一个{this}则定义闭包，所以${ {this}.toString() }对应输出是A$_method1_closure3可以理解。
         //但是为什么${{this}}对应输出仍然是A呢？
-        println "method1 $this ${this} ${{this}} ${{this}.toString()}}" 
+        println "method1 $this ${this} ${{this}} ${{this}.toString()}" 
         
-        //method1 null null A$_method1_closure5@7e04adc1，给我的感觉像是编译器的优化所致，跟解析语法糖的逻辑有关。平时避免这样写就是了
-        println "method1 ${} ${{}} ${{}.toString()}"
+        //method1 null 7 null ConsoleScript22$_run_closure3@5b71215a，这个例子表明，$表达式里只有一个闭包对象时，闭包会执行（参数传空），返回值作为${}表达式的值。
+        //如果把闭包看作对象，那么这种行为有点反直觉;但是看作函数指针的话，也勉强能理解。平时避免这样写就是了
+        println "method1 ${} ${{7}} ${{}} ${{}.toString()}"
+        
+        //接上，基于groovy3.0.7, 第一个输出xxx   (回车) yyy （回车）method1 
+        //第二行输出xxx   (回车) yyy （回车）zzzz （回车） method1 
+        //第三行在zzzz后面把ttt也打出来了。777始终不会输出。总之这里面比较让人困惑，避免这样写。
+        println "method1 ${println 'xxx';return {println 'yyy';return {println 'zzzz';return {println 'ttt';return 777}}}}"
+        println "method1 ${println 'xxx';return {println 'yyy';return {println 'zzzz';return {println 'ttt';return 777}}()}}"
+        println "method1 ${println 'xxx';return {println 'yyy';return {println 'zzzz';return {println 'ttt';return 777}()}()}}"
         
         //3.
         def cc = {
