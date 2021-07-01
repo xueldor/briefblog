@@ -560,9 +560,9 @@ printx()
 
 ## $getCallSiteArray
 
-反编译的代码中有很多$getCallSiteArray，所有的方法调用都变成了CallSite的调用。我们好像没有看到$getCallSiteArray的定义，这是反编译工具的问题。似乎所有的反编译工具都不会把$开头的方法和字段显示出来，包括jdk里面自带的javap命令。我不知道是不是$符号有什么特别的含义。但是我发现XJad这个工具可以把$开头的那些属性和方法全部显示出来。另外也可以用字节码查看器/修改器看到这些隐藏起来的方法。
+反编译的代码中有很多$getCallSiteArray，所有的方法调用都变成了CallSite的调用。我们好像没有看到$getCallSiteArray的定义，这是反编译工具的问题。似乎所有的反编译工具都不会把$开头的方法和字段显示出来，包括jdk里面自带的javap命令。我不知道是不是$符号有什么特别的含义。但是我发现XJad、jadx-gui这两个个工具可以把$开头的那些属性和方法全部显示出来。另外也可以用字节码查看器/修改器看到这些隐藏起来的方法。
 
-讨论哪个反编译工具更好用没有意义，只是在这个场景下，以研究groovy为目的，我建议用XJad或者Bytecode-Viewer.jar(从https://github.com/Konloch/bytecode-viewer/releases下载最新版，java -jar启动GUI)。
+讨论哪个反编译工具更好用没有意义，只是在这个场景下，以研究groovy为目的，我建议用XJad、jadx-gui或者Bytecode-Viewer.jar(从https://github.com/Konloch/bytecode-viewer/releases下载最新版，java -jar启动GUI)。
 
 举一个例子：
 
@@ -595,7 +595,7 @@ public Object doCall(Object it)
 }
 ```
 
-groovy为什么要把调用委托到CallSite呢？以我的经验，八九不离十是为了实现某些动态特性。
+groovy为什么要把调用委托到CallSite呢？以我的经验，八九不离十是为了实现某些动态特性。(更新：后来的学习，实锤了我的判断)
 
 ## 闭包委托
 
@@ -795,3 +795,268 @@ true
 ```
 
 这个知识十分重要。
+
+## 动态特性
+
+groovy 类库称为GDK，是JDK类库的扩展， 提供了一些新的类，也为已经存在的java类增加了功能。在背后，他们都是JDK的类  ，但是在groovy里能使用原来不存在的方法和属性。这说明groovy拥有现代动态语言的特性。
+
+Groovy通过一个名叫MetaClass的装备来技巧性的过滤对对象所有方法的调用，这样允许动态分配方法，包括解决附加方法到存在的  
+
+### MetaClass  
+
+MetaClass  称为`元类  `,在 groovy 中，所有的对象都实现了 GroovyObject 接口 :
+
+```groovy
+public interface GroovyObject {
+    public Object invokeMethod(String name, Object args);
+    public Object getProperty(String property);
+    public void setProperty(String property, Object newValue);
+    public MetaClass getMetaClass();
+    public void setMetaClass(MetaClass metaClass);
+}
+```
+
+你用到的groovy类都实现了这个接口并有默认实现，看到那个getMetaClass方法了没，groovy类的方法，一旦转成java内部，里面的逻辑就多了层层调用，最后会转到相应的MetaClass里面，MetaClass对象调用invokeMethod，这里面又是层层逻辑判断调用谁的invokeMethod。比如我随便截一段代码：
+
+```groovy
+//groovy.lang.MetaClassImpl
+//invokeMethod方法
+if (method == null && delegate != closure && delegate != null && (method = (delegateMetaClass = lookupObjectMetaClass(delegate)).pickMethod(methodName, argClasses)) != null) {
+                        return delegateMetaClass.invokeMethod(delegate, methodName, originalArguments);
+                    }
+                    if (method == null && owner != closure && (method = (ownerMetaClass = lookupObjectMetaClass(owner)).pickMethod(methodName, argClasses)) != null) {
+                        return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
+                    }
+
+```
+
+通过这种机制，groovy可以动态添加属性、方法，实现方法拦截。
+
+```groovy
+class MyExtension{
+
+}
+def exten = new MyExtension()
+exten.metaClass.addNewProp = "new prop "//添加一个属性
+exten.metaClass.addNewMethod << {a -> println a}//添加一个方法
+MyExtension.metaClass.'static'.addStaticMethod << {a -> println a}//添加一个静态方法
+println exten.addNewProp//打印：new prop 
+exten.addNewMethod(3)//打印：3
+MyExtension.addStaticMethod 6//打印：6
+```
+
+  MetaClass 被存储在一个名称为 MetaClassRegistry 的中心存储器中，同时 groovy 也从MetaClassRegistry 中获取 MetaClass。一个类的不同对象可以引用不同的MetaClass。示意图如下：
+
+![image-20210625143334198](01-需要知道的groovy/image-20210625143334198.png)
+
+现在我们写一个简单的例子：
+
+```groovy
+//Hello.groovy
+class Hello{
+	public void testX(){println 'X'}
+	
+	public static void main(String[] args){ new Hello().testX()}
+}
+```
+
+当然，这段代码几乎完全就是java。不过我们保存在Hello.groovy里，用`groovyc Hello.groovy`编译，然后反编译看java代码。通过这种研究可以加强我们对groovy的动态特性的理解。反编译的java代码如下：
+
+```java
+package defpackage;
+
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
+import groovy.transform.Generated;
+import groovy.transform.Internal;
+import java.beans.Transient;
+import java.lang.ref.SoftReference;
+import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.CallSiteArray;
+
+/* renamed from: Hello  reason: default package */
+/* compiled from: Hello.groovy */
+public class Hello implements GroovyObject {
+    private static /* synthetic */ SoftReference $callSiteArray;
+    private static /* synthetic */ ClassInfo $staticClassInfo;
+    public static transient /* synthetic */ boolean __$stMC;
+    private transient /* synthetic */ MetaClass metaClass = $getStaticMetaClass();
+
+    private static /* synthetic */ CallSiteArray $createCallSiteArray() {
+        String[] strArr = new String[3];
+        $createCallSiteArray_1(strArr);
+        return new CallSiteArray(Hello.class, strArr);
+    }
+
+    private static /* synthetic */ void $createCallSiteArray_1(String[] strArr) {
+        strArr[0] = "println";
+        strArr[1] = "testX";
+        strArr[2] = "<$constructor$>";
+    }
+
+    private static /* synthetic */ CallSite[] $getCallSiteArray() {
+        CallSiteArray callSiteArray;
+        if ($callSiteArray == null || (callSiteArray = (CallSiteArray) $callSiteArray.get()) == null) {
+            callSiteArray = $createCallSiteArray();
+            $callSiteArray = new SoftReference(callSiteArray);
+        }
+        return callSiteArray.array;
+    }
+
+    @Generated
+    public Hello() {
+        $getCallSiteArray();
+    }
+
+    /* access modifiers changed from: protected */
+    public /* synthetic */ MetaClass $getStaticMetaClass() {
+        if (getClass() != Hello.class) {
+            return ScriptBytecodeAdapter.initMetaClass(this);
+        }
+        ClassInfo classInfo = $staticClassInfo;
+        if (classInfo == null) {
+            classInfo = ClassInfo.getClassInfo(getClass());
+            $staticClassInfo = classInfo;
+        }
+        return classInfo.getMetaClass();
+    }
+
+    @Generated
+    @Internal
+    @Transient
+    public MetaClass getMetaClass() {
+        MetaClass metaClass2 = this.metaClass;
+        if (metaClass2 != null) {
+            return metaClass2;
+        }
+        this.metaClass = $getStaticMetaClass();
+        return this.metaClass;
+    }
+
+    @Generated
+    @Internal
+    public void setMetaClass(MetaClass metaClass2) {
+        this.metaClass = metaClass2;
+    }
+
+    public void testX() {
+        $getCallSiteArray()[0].callCurrent(this, "X");
+    }
+
+    public static void main(String... args) {
+        CallSite[] $getCallSiteArray = $getCallSiteArray();
+        $getCallSiteArray[1].call($getCallSiteArray[2].callConstructor(Hello.class));
+    }
+}
+```
+
+你发现代码多了许多。但是逻辑还是清晰的。首先原来代码里出现的方法调用，把方法名保存下来，因为后面要通过反射调用：
+
+```groovy
+private static /* synthetic */ void $createCallSiteArray_1(String[] strArr) {
+    strArr[0] = "println";
+    strArr[1] = "testX";
+    strArr[2] = "<$constructor$>";//表示Hello类的构造函数
+}
+```
+
+然后前面说过方法的调用最后都是转到MetaClass里，所以有一个getMetaClass的实现：
+
+```groovy
+public MetaClass getMetaClass() {
+    MetaClass metaClass2 = this.metaClass;
+    if (metaClass2 != null) {
+        return metaClass2;
+    }
+    this.metaClass = $getStaticMetaClass();
+    return this.metaClass;
+}
+```
+
+这段代码跟进去：
+
+```
+ScriptBytecodeAdapter.initMetaClass(this) ->
+InvokerHelper.getMetaClass((Class) object.getClass())  ->
+/*InvokerHelper类里面*/ metaRegistry.getMetaClass(cls);
+
+metaRegistry对象：
+MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
+--------前面说过“MetaClass 被存储在一个名称为 MetaClassRegistry 的中心存储器中”，跟到这里证实了。
+```
+
+这一段要跟踪到groovy的源码里。你需要一份源码，或者，把`groovy-all-2.4.15.jar`拖到反编译工具里。
+
+然后，`public void testX(){println 'X'}`这个方法里的`println 'x'`变成了：` $getCallSiteArray()[0].callCurrent(this, "X");`。
+
+我们先弄清楚` $getCallSiteArray()[0]`是什么。数组下标是0，根据前面`strArr[0] = "println";`,知道对应的println这个方法。$getCallSiteArray的实现：
+
+```java
+private static /* synthetic */ CallSite[] $getCallSiteArray() {
+    CallSiteArray callSiteArray;
+    if ($callSiteArray == null || (callSiteArray = (CallSiteArray) $callSiteArray.get()) == null) {
+        callSiteArray = $createCallSiteArray();//里面通过“new CallSiteArray(Hello.class, strArr)”创建了一个CallSiteArray对象
+        $callSiteArray = new SoftReference(callSiteArray);
+    }
+    return callSiteArray.array;
+}
+```
+
+我们进入源码，看看CallSiteArray是什么。看到CallSiteArray类的代码里面有一个成员变量：`public final CallSite[] array;`，上面返回的就是`callSiteArray.array`,所以` $getCallSiteArray()[0]`是一个CallSite对象。CallSite的英文含义就是“调用位置”，说白了就是你要调用的那个方法，封装在CallSite里。执行的时候，从CallSite里面取出方法名、参数，然后反射调用。
+
+CallSite是一个接口，我们需要知道具体是哪个类。看CallSiteArray的构造函数：
+
+```java
+public CallSiteArray(Class owner2, String[] names) {
+    this.owner = owner2;
+    this.array = new CallSite[names.length];
+    for (int i = 0; i < this.array.length; i++) {
+        this.array[i] = new AbstractCallSite(this, i, names[i]);//AbstractCallSite
+    }
+}
+```
+
+所以我们打开AbstractCallSite类。
+
+` $getCallSiteArray()[0].callCurrent(this, "X")`就是`AbstractCallSite.callCurrent(this, "X")`,找到callCurrent的定义：
+
+```java
+    public Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
+        return CallSiteArray.defaultCallCurrent(this, receiver, args);
+    }
+```
+
+继续跟进去：
+
+```java
+public static Object defaultCallCurrent(CallSite callSite, GroovyObject receiver, Object[] args) throws Throwable {
+    return createCallCurrentSite(callSite, receiver, args, callSite.getArray().owner).callCurrent(receiver, args);
+}
+```
+
+这行代码就是先创建CallSite，然后在新的callSite上调用callCurrent。
+
+```java
+private static CallSite createCallCurrentSite(CallSite callSite, GroovyObject receiver, Object[] args, Class sender) {
+    CallSite site;
+    if (receiver instanceof GroovyInterceptable) {
+        site = new PogoInterceptableSite(callSite);
+    } else {
+        MetaClass metaClass = receiver.getMetaClass();
+        if (receiver.getClass() != metaClass.getTheClass() && !metaClass.getTheClass().isInterface()) {
+            site = new PogoInterceptableSite(callSite);
+        } else if (metaClass instanceof MetaClassImpl) {
+            site = ((MetaClassImpl) metaClass).createPogoCallCurrentSite(callSite, sender, args);
+        } else {
+            site = new PogoMetaClassSite(callSite, metaClass);
+        }
+    }
+    replaceCallSite(callSite, site);
+    return site;
+}
+```
+到这里就跟前面讲的MetaClass接上了。结论是AbstractCallSite.callCurrent里面会调用到MetaClass。也就是，如果类本身没有这个方法，那么就从MetaClass里去找。这就解释了为什么可以通过MetaClass来给类扩展方法。
+
+感兴趣的话可以继续往里面扒。
