@@ -11,9 +11,15 @@
 ```groovy
 android {
         ...
-        viewBinding {
-            enabled = true
-        }
+    //Android Studio 4.0版本以上
+    buildFeatures {
+        viewBinding = true
+    }
+
+    //Android Studio 3.6
+//    viewBinding {
+//        enabled = true
+//    }
     }
 } 
 ```
@@ -138,9 +144,26 @@ class PaymentAdapter(private val paymentList: List<PaymentBean>) : RecyclerView.
 
 ## 处理`include`、`merge`标签
 
+首先要知道两个知识点。
+
+第一个知识点： 每个自动生成的Binding类都有两种方法：`inflate`和`bind`,`inflate`方法里面执行`inflater.inflate()`,也就是把xml解析成View对象，而bind方法里面只是new Binding类，并调用findViewById把子view赋值给 Binding类 的成员。这些成员根据xml里的id生成，也就是一个view(比如button)，你声明了id属性，就会在对应的 Binding类 里面生成一个成员字段。
+
+所以，1. 调用bind,一定是在对应view已经渲染出来之后，否则无法findViewById。
+
+2. 每次调用bind，都会返回一个新的Binding类，但是里面的view对象都是一样的，都是xml渲染出来的那个view。由于这个Binding类只用来引用view，不存储其它数据，所以我们多次调用bind是没问题的(尽管没必要)
+3. inflate方法里面会自动调用bind，返回绑定类对象，所以通常我们不需要关注bind方法
+
+第二个知识点：`include`标签上面可以指定id，子布局的根视图上面也可以指定id。显然inflate出来后，只会存在一个id。所以规则是，优先使用`include`设置的id。inflate出来的view，实际id是include标签的id，但是如果include标签没有声明id，则view的id是子布局的根视图指定的id。通过Android Studio的`Layout Inspecor`工具实时抓取view结构，可以证明以上结论。不过如果搞不清楚，可以把两个id声明为一致。
+
+生成的binding类在`build\generated\data_binding_base_class_source_out\debug\out\`下面，源码并不复杂，最好的方法就是去看这个源码，而不是看别人的教程，因为教程不管怎么啰嗦都不可能把所有点讲透。但不管如何，我这里要总结一下，作为我的学习成果。
+
+了解这两点，可以自然而然推理出ViewBinding的使用方法：
+
 - `<inlude>` 的子布局不包含 `<merge>`标签
 
-  需要为`<include>` 分配一个 ID，使用该 ID 来访问包含布局中的视图
+  你的xml对应一个binding类，然后在此xml中include了另一个xml。子xml的根元素不是“merge”标签。
+
+  这种情况，需要为`<include>` 分配一个 ID，子布局的根元素不需要id，因为inflate后，会用外面"include"的id代替“子布局的根元素”的id。使用该 ID 来访问包含布局中的视图
 
   ```xml
   //main_layout.xml
@@ -164,21 +187,50 @@ class PaymentAdapter(private val paymentList: List<PaymentBean>) : RecyclerView.
   setSupportActionBar(binding.appbar.toolbar)
   ```
 
+  如果你非要给子布局的根元素指定id，也没关系，那么子布局的绑定类里面，就会有一个根据此id生成的字段，此字段引用的view对象，跟你在外面通过“include 标签的id”引用的对象是一样的。
+
 - 如果被include的布局文件使用merge标签
 
-  使用merge的目的是消除过多的嵌套，子布局里没有根视图了。
+  使用merge的目的是消除过多的嵌套，子布局里没有根视图了，根标签用merge代替，里面的view直接塞到外层布局的容器里。
 
-  其实跟前面是一样的：`binding.appbar.toolbar`。这里只是想说一下，
+  万变不离其宗，跟前面总思路是一样的，只是需要注意一下，
 
-  1. 当布局文件里使用merge时，没有必要使用getRoot()。实际上getRoot()方法返回的可能是外层的一个view，也可能是本身布局的root。
+  1. `<include>`标签的ID是给子布局的根view 的，既然根标签变成了merge，也就没法应用这个id，这个id是无效的，但是生成绑定类的时候，工具是不知道的，依然会根据id生成成员字段，然后通过findViewById给字段赋值，显然这一步会报错，因为实际的view树上没有这个id。报错信息类似：
 
-  2. 当布局文件里使用merge时，对应绑定类的inflate方法只有一个方法：inflate(LayoutInfalte, parentView)。而不使用merge时，inflate方法有两个：
-
+     ```shell
+   Caused by: java.lang.NullPointerException: Missing required view with ID: com.hsae.ccs20.xxx:id/tab_indicatorInclude
+             at com.hsae.ccs20.xxx.databinding.ActivityVideoBinding.bind(ActivityVideoBinding.java:71)
+     ```
+   所以，不要给include标签设置id。如果你的代码里这样写了，没有报错，只是因为运气好，子布局里刚好有一个同名的id，不代表你的代码没有问题。
+  
+  2. 由于include标签没有Id,故无法通过外层布局文件的Binding类引用到子布局里的view。需要调用子布局绑定类的bind方法来获取。
+  
+     ```xml
+     //main.xml
+     <include
+         layout="@layout/tab_indicator"/>
+     
+     //tab_indicator.xml
+     <merge xmlns:android="http://schemas.android.com/apk/res/android">
+     </merge>
+     
+     //MainActivity.kotlin
+     var bind = TabIndicatorBinding.bind(binding.root)//参数是子布局的parent view，只要在这个view上调用findViewById()能访问到子布局的view就行。
+     ```
+  
+     如果你不想这么做，希望如前面一样通过外层xml的绑定类访问到子布局，也是有一些奇技淫巧的。你可以把include的id设置成“include”标签的parent的id。这样就会在绑定类里面生成对子布局绑定类的引用。但是“parent” view也有一个字段，显然名称会冲突，ViewBinding会自动重命名。所以不要这么做。
+  
+  3. getRoot()返回的是bind(binding.root)参数传进来的view对象。
+  
+  4. 当布局文件里使用merge时，对应绑定类的inflate方法只有一个方法：inflate(LayoutInfalte, parentView)。而不使用merge时，inflate方法有两个：
+  
      inflate(LayoutInfalte)和inflate(LayoutInfalte, parentView，isAttachToParent).
+  
+   注意，这三个方法参数各不一样。
+  
+  5. 若还有其它疑难，请看源码，自然一目了然。
 
-     注意，这三个方法参数各不一样。
-
-  如果activity的布局文件直接使用了merge，那么这样写：
+如果activity的布局文件直接使用了merge，那么这样写：
 
   ```kotlin
   var content : ViewGroup = findViewById(android.R.id.content)
@@ -186,15 +238,3 @@ class PaymentAdapter(private val paymentList: List<PaymentBean>) : RecyclerView.
   //请注意，不需要setContentView，inflate时已经自动attach了。
   ```
 
-  因为子布局也是一个独立的xml布局文件，也会生成绑定类，假设子布局叫tab_indicator.xml, 这时如果你执行：
-
-  ```kotlin
-  var bind2 = TabIndicatorBinding.bind(binding.root)
-  println(binding.tabIndicator == bind)
-  println(bind.btnGap === binding.tabIndicator.btnGap)
-  打印：
-  System.out: false
-  System.out: true
-  ```
-
-也就是说，这两个bind对象不是一个对象，但是通过bind对象获取到的view是一样的。有点奇怪。
