@@ -73,7 +73,9 @@
 
 3. 非连续内存分配
 
-实际上high memory还被划分为了3个区域，一部分用于vmalloc分配虚拟地址上连续的内存，一部分用于较长期的动态映射（persistent kernel mappings），还有一部分用于编译时可以直接分配物理地址的高端固定映射（fixmaps）：
+实际上high memory还被划分为了3个区域，一部分用于vmalloc分配虚拟地址上连续的内存，一部分用于较长期的动态映射（persistent kernel mappings），还有一部分用于编译时可以直接分配物理地址的高端固定映射（fixmaps）。
+
+![image-20211217145403843](_img/image-20211217145403843.png)
 
 来到64位系统，**虚拟地址空间不足**带来的问题天然就不存在，因此在64位系统的memlayout中就没有high memory，但vmalloc仍然是内核的一个重要部分。
 
