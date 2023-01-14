@@ -130,6 +130,12 @@ unsupported class file version 55.0
 '/c/Program Files/Java/jdk1.8.0_211/bin/javac.exe' -encoding UTF-8 -source 1.8 -target 1.8 -classpath /e/sdk/framework.jar:/e/AutoSdk/libs/libProtocolService.jar  -d out/ `find ./src -name *.java` `find ./gen -name *.java`
 ```
 
+> Build Tool 31 以后从SDK内删除了dx工具，使用d8工具来替代dx工具
+>
+> d8.bat out/com/test/*.class  --lib D:\android-sdk\platforms\android-29\android.jar  --output ./dex
+>
+> see more:https://developer.android.google.cn/studio/command-line/d8?hl=zh-cn
+
 ### 第五步 生成APK文件
 
 以前用apkbuilder命令，不过在 Android SDK build tools r22里面被移除了。
