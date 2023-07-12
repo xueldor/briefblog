@@ -129,7 +129,7 @@ VolumeManager: 主要是配置相关的选项并告知上层（Framework，app�
 
 
 
-![image-20230618221456550](./_img/vold/image-20230618221456550.png)
+![image-20230618221456550](./imgs/vold/image-20230618221456550.png)
 
 # 初始化过程
 
@@ -202,11 +202,11 @@ service vold /system/bin/vold \
 
    用我自己的手机来举例，原来vold目录里是空的。然后我插入一张sd卡，首先/dev/block目录下可以看到sd卡对应的块设备：
 
-![image-20230617233130135](./_img/vold/image-20230617233130135.png)
+![image-20230617233130135](./imgs/vold/image-20230617233130135.png)
 
 然后vold目录变成：
 
-![image-20230624121852622](./_img/vold/image-20230624121852622.png)
+![image-20230624121852622](./imgs/vold/image-20230624121852622.png)
 
 挂载点：
 
@@ -335,7 +335,7 @@ int NetlinkManager::start() {
 
 # Vold的通信
 
-![image.png](_img/24b6685c163449a1b2fa4c47e58d026dtplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp)
+![image.png](imgs/24b6685c163449a1b2fa4c47e58d026dtplv-k3u1fbpfcp-zoom-in-crop-mark4536000.awebp)
 
 ### vold接收uevent的流程
 
@@ -343,7 +343,7 @@ NetlinkManager::start()函数创建并绑定了socket用来与kernel通信，在
 
 NetlinkHandler继承NetlinkListener，NetlinkListener位于libsysutils，libsysutils是一个共享库。NetlinkHandler实现onEvent方法（设计模式里的模板方法）
 
-![image-20230618123533492](./_img/vold/image-20230618123533492.png)
+![image-20230618123533492](./imgs/vold/image-20230618123533492.png)
 
 handleBlockEvent里面处理三种事件：新增（*kAdd*）、变化（*kChange*）、移除（*kRemove*）。
 
@@ -368,9 +368,9 @@ handleBlockEvent里面处理三种事件：新增（*kAdd*）、变化（*kChang
 
 decode解析出NetlinkEvent对象：
 
-![image-20230618214656252](./_img/vold/image-20230618214656252.png)
+![image-20230618214656252](./imgs/vold/image-20230618214656252.png)
 
-![image-20230618214725907](./_img/vold/image-20230618214725907.png)
+![image-20230618214725907](./imgs/vold/image-20230618214725907.png)
 
 防止有些同学不知道，补充一句，这里mPath是在/sys文件系统下的路径。
 
@@ -393,9 +393,9 @@ decode解析出NetlinkEvent对象：
 
 
 
-![image-20230618214313716](./_img/vold/image-20230618214313716.png)
+![image-20230618214313716](./imgs/vold/image-20230618214313716.png)
 
-![image-20230618214346961](./_img/vold/image-20230618214346961.png)
+![image-20230618214346961](./imgs/vold/image-20230618214346961.png)
 
 
 
@@ -558,7 +558,7 @@ sysfs 挂载到 /sys 目录下，以设备树的形式向 user namespace 提供�
 
 从vold的onEvent开始。
 
-![image-20230712164334464](_img/image-20230712164334464.png)
+![image-20230712164334464](imgs/image-20230712164334464.png)
 
 1. 判断设备类型，过滤出block类型设备
 
@@ -958,7 +958,7 @@ lancelot:/ # mount | grep 3236
 
  这些/dev/fuse的挂载点是在后续代码生成的。代码接着往下看：
 
-![image-20230712164559039](_img/image-20230712164559039.png)
+![image-20230712164559039](imgs/image-20230712164559039.png)
 
 ```cpp
 LOG(INFO) << "Mounting public fuse volume";
@@ -998,7 +998,7 @@ BindMount(absolute_lower_path, pass_through_path)
 
 我们分析一下从vold里mount fuse,到fuse daemon的链路。
 
-![image-20230712164631294](_img/image-20230712164631294.png)
+![image-20230712164631294](imgs/image-20230712164631294.png)
 
 前面StorageManagerService里调用mVold.mount时，最后一个参数是一个回调，在fuse mount结束后，通知StorageManagerService。
 
@@ -1185,13 +1185,13 @@ void com_android_providers_media_FuseDaemon_start(
 
 网上找的一张图，大部分能对上，将就看看。
 
-![img](./_img/vold/1edc21480dc34217beb2985e93f441b8.png)
+![img](./imgs/vold/1edc21480dc34217beb2985e93f441b8.png)
 
 ## MEDIA_MOUNTED广播通知
 
 最后，系统会发出android.intent.action.MEDIA_MOUNTED广播，APP可以通过监听这个广播，收到sd卡的挂载通知。分析发送的流程。
 
-![image-20230712164722148](_img/image-20230712164722148.png)
+![image-20230712164722148](imgs/image-20230712164722148.png)
 
 ```cpp
 //system/vold/model/VolumeBase.cpp

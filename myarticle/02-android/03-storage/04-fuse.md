@@ -6,11 +6,11 @@ FUSE: 用户空间文件系统
 
  # 架构
 
-![image-20230622205709474](./_img/fuse/image-20230622205709474.png)
+![image-20230622205709474](./imgs/fuse/image-20230622205709474.png)
 
 #  组件
 
-![image-20230622210657831](./_img/fuse/image-20230622210657831.png)
+![image-20230622210657831](./imgs/fuse/image-20230622210657831.png)
 
 fuse.ko是内核自带的，启动后只要查看`/dev/fuse`文件存在即表示系统支持。
 
@@ -24,19 +24,19 @@ libfuse源码里有个example目录，里面提供了许多示例。最简单的
 
 * 在home目录新建目录hello：
 
-  ![image-20230622213930352](./_img/fuse/image-20230622213930352.png)
+  ![image-20230622213930352](./imgs/fuse/image-20230622213930352.png)
 
 * 此时hello是空的。然后到build/example/目录，执行
 
-  ![image-20230622214157594](./_img/fuse/image-20230622214157594.png)
+  ![image-20230622214157594](./imgs/fuse/image-20230622214157594.png)
 
 * 可以看到文件系统已经挂载到这个hello目录：
 
-  ![image-20230622214312954](./_img/fuse/image-20230622214312954.png)
+  ![image-20230622214312954](./imgs/fuse/image-20230622214312954.png)
 
 * 查看一下挂载信息
 
-  ![image-20230622214440941](./_img/fuse/image-20230622214440941.png)
+  ![image-20230622214440941](./imgs/fuse/image-20230622214440941.png)
 
   意思是文件系统挂载点是/home/xue/hello,这时，如果有用户访问/home/xue/hello目录，系统识别出这个路径文件系统类型是fuse.hello，VFS识别到fuse前缀，就转发给内核的fuse驱动，驱动再转给hello程序。
 
@@ -88,15 +88,15 @@ release：（在打开文件后）释放文件。
 
 示例只实现了getattr、readdir、open、read几个方法，所以我可以在目录里ls：
 
-![image-20230622220110170](./_img/fuse/image-20230622220110170.png)
+![image-20230622220110170](./imgs/fuse/image-20230622220110170.png)
 
 可以cat:
 
-![image-20230622220132298](./_img/fuse/image-20230622220132298.png)
+![image-20230622220132298](./imgs/fuse/image-20230622220132298.png)
 
 但是无法echo(因为没有实现write)：
 
-![image-20230622220209043](./_img/fuse/image-20230622220209043.png)
+![image-20230622220209043](./imgs/fuse/image-20230622220209043.png)
 
 我们可以试着切到root，依然提升权限不够，所以真正的原因就是fuse_operations没有实现写方法
 

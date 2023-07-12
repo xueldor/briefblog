@@ -10,7 +10,7 @@
 
 假设没有多用户。
 
-![img](./_img/存储/v2-76c6e06d688756944ccba4a85236dd7b_r.jpg)
+![img](./imgs/v2-76c6e06d688756944ccba4a85236dd7b_r.jpg)
 
 ## 系统目录
 
@@ -179,11 +179,11 @@ private void requestmanageexternalstorage_Permission() {
 
 我们发现申请这个权限，不是用的动态权限的方法，而是通过intent跳到一个设置界面：
 
-![img](./_img/存储/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rW35pyI5rGQ6L6w,size_20,color_FFFFFF,t_70,g_se,x_16.png)
+![img](./imgs/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rW35pyI5rGQ6L6w,size_20,color_FFFFFF,t_70,g_se,x_16.png)
 
 在settings里面看就知道有这个权限了。
 
-![img](./_img/存储/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rW35pyI5rGQ6L6w,size_20,color_FFFFFF,t_70,g_se,x_16-1687883887940-3.png)
+![img](./imgs/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rW35pyI5rGQ6L6w,size_20,color_FFFFFF,t_70,g_se,x_16-1687883887940-3.png)
 
 另外要说的是，即使获得里这个权限，也不是sdcard所有文件都能访问。sdcard/Android/packages目录下的应用私有数据，普通应用无论如何也是不能访问的。
 
@@ -206,11 +206,11 @@ isEncrypted(new File("/data"))//true
 
 多用户下，存储涉及的目录关系是这样：
 
-![image-20230708150128995](./_img/存储/image-20230708150128995.png)
+![image-20230708150128995](./imgs/image-20230708150128995.png)
 
 假设还有一个user id=10的用户：
 
-![image-20230708150009418](./_img/存储/image-20230708150009418.png)
+![image-20230708150009418](./imgs/image-20230708150009418.png)
 
 * 主用户下，`/data/data`访问的是`/data/user/0`; 次用户user10里路径`/data/data`真正访问的是`/data/user/10`;
 * 主用户下，sdcard通过符号链接，访问到/storage/emulated/0；又`/storage`绑定到`/mnt/user/0`，所以sdcard访问到`mnt/user/0/emulated/0`;又，`mnt/user/0/emulated/` 挂载到`/dev/fuse`，所以访问请求会交给fuse处理，而fuse记录了从/storage/emulated到/data/media的映射，所以最后sdcard访问到的是`/data/media/0`。

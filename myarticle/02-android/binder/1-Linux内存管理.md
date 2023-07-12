@@ -75,7 +75,7 @@
 
 实际上high memory还被划分为了3个区域，一部分用于vmalloc分配虚拟地址上连续的内存，一部分用于较长期的动态映射（persistent kernel mappings），还有一部分用于编译时可以直接分配物理地址的高端固定映射（fixmaps）。
 
-![image-20211217145403843](_img/image-20211217145403843.png)
+![image-20211217145403843](1-Linux内存管理/image-20211217145403843.png)
 
 来到64位系统，**虚拟地址空间不足**带来的问题天然就不存在，因此在64位系统的memlayout中就没有high memory，但vmalloc仍然是内核的一个重要部分。
 
@@ -198,7 +198,7 @@ high_memory后面分为动态内存映射区（VMALLOC区）、永久映射区(P
   对应的内存释放函数为：
   
   ```C
-void vfree(const void *addr);
+  void vfree(const void *addr);
   ```
   
   注意：vmalloc() 和 vfree() 可以睡眠，因此不能从中断上下文调用

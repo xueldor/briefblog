@@ -25,7 +25,7 @@ int main(){
 
 main函数的汇编：
 
-![image-20211110151847247](_img/image-20211110151847247.png)
+![image-20211110151847247](imgs/image-20211110151847247.png)
 
 除了call  __main,有4个call：
 
@@ -61,6 +61,6 @@ int __cdecl main(int argc, const char **argv, const char **envp)
 
 左边函数窗口：
 
-![image-20211110153915743](_img/image-20211110153915743.png)
+![image-20211110153915743](imgs/image-20211110153915743.png)
 
 看到有三个函数对应c++源码里的array_init。

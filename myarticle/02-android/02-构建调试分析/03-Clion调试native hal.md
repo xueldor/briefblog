@@ -6,11 +6,11 @@
 
 ## 添加debug的配置
 
-![image-20230609102808116](/media/work/d/article/_img/03-Clion调试native hal/image-20230609102808116.png)
+![image-20230609102808116](imgs/03-Clion调试native hal/image-20230609102808116.png)
 
 `Edit Configurations`,点击+号，
 
-![image-20230609103335102](/media/work/d/article/_img/03-Clion调试native hal/image-20230609103335102.png)
+![image-20230609103335102](imgs/03-Clion调试native hal/image-20230609103335102.png)
 
 选择`GDB Remote Debug`, 参考上图填入配置。下面的`Path mappings`，如果你开发的程序路径在vendor下面，那就添加一项vendor。
 
@@ -29,10 +29,10 @@ adb shell gdbserver64 :1235 --attach pid
 
 点击"Debug"
 
-![image-20230609104616135](/media/work/d/article/_img/03-Clion调试native hal/image-20230609104616135.png)
+![image-20230609104616135](imgs/03-Clion调试native hal/image-20230609104616135.png)
 
 每次重新执行过forword后，clion里先把红色的点掉，再点击Debug。
 
 ## 效果
 
-![image-20230609104859001](/media/work/d/article/_img/03-Clion调试native hal/image-20230609104859001.png)
+![image-20230609104859001](imgs/03-Clion调试native hal/image-20230609104859001.png)
