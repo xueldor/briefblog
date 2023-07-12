@@ -558,6 +558,8 @@ sysfs 挂载到 /sys 目录下，以设备树的形式向 user namespace 提供�
 
 从vold的onEvent开始。
 
+![image-20230712164334464](_img/image-20230712164334464.png)
+
 1. 判断设备类型，过滤出block类型设备
 
    ```cpp
@@ -956,6 +958,8 @@ lancelot:/ # mount | grep 3236
 
  这些/dev/fuse的挂载点是在后续代码生成的。代码接着往下看：
 
+![image-20230712164559039](_img/image-20230712164559039.png)
+
 ```cpp
 LOG(INFO) << "Mounting public fuse volume";
 android::base::unique_fd fd;
@@ -993,6 +997,8 @@ BindMount(absolute_lower_path, pass_through_path)
 一个是，sdcard进程是自己与/dev/fuse打交道，而现在mediaprovider里是直接引入libfuse库。
 
 我们分析一下从vold里mount fuse,到fuse daemon的链路。
+
+![image-20230712164631294](_img/image-20230712164631294.png)
 
 前面StorageManagerService里调用mVold.mount时，最后一个参数是一个回调，在fuse mount结束后，通知StorageManagerService。
 
@@ -1184,6 +1190,8 @@ void com_android_providers_media_FuseDaemon_start(
 ## MEDIA_MOUNTED广播通知
 
 最后，系统会发出android.intent.action.MEDIA_MOUNTED广播，APP可以通过监听这个广播，收到sd卡的挂载通知。分析发送的流程。
+
+![image-20230712164722148](_img/image-20230712164722148.png)
 
 ```cpp
 //system/vold/model/VolumeBase.cpp
