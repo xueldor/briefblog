@@ -24,7 +24,7 @@ gradlew installDebug
 
 本文的重点是使用android-sdk里面的工具构建apk，不借助gradle或任何IDE。
 
-来自google官方经典的流程图：
+来自google官方经典的流程图：（**xue: 这张图还是以前的V1签名，谷歌现在用V2、V3以及更新版本的签名**）
 
 ![img](00-构建apk/1825722-53cad5232490089c.png)
 
@@ -188,7 +188,35 @@ APK签名完成后，需要对未压缩的数据进行4个字节的边界对齐�
 
 ```shell
 zipalign -f 4 aaaa.apk  aaa-aligned.apk
+zipalign -p -f -v 4 DFL_CarControl_mod.apk DFL_CarControl_mod_align.apk
 ```
+
+### 第八步 V2签名
+
+- v1 方案：基于 JAR 签名，采用的签名工具为 `jarsigner`
+- v2 方案：APK 签名方案 v2，在 Android 7.0 引入，采用的签名工具为 `apksigner`
+- v3 方案：APK 签名方案v3，在 Android 9.0 引入，采用的签名工具为 `apksigner`
+
+V2签名放到第八步这里 ，是因为V2签名和V1签名不同，V2签名会破坏原来的zip包，即V2签名后，apk就不是标准的zip格式了(尽管还是能zip解压)，所以4字节对齐要在V2签名的前面执行。如果先签名在zipalign，签名失效。
+
+举例来说，我先用这几个命令生成keystore文件(将安卓平台签名文件转成keystore格式文件)：
+
+```shell
+openssl pkcs8 -in platform.pk8 -inform DER -outform PEM -out platform.priv.pem
+openssl pkcs12 -export -in platform.x509.pem -inkey platform.priv.pem -out platform.pk12 -name android
+keytool -importkeystore -destkeystore platform.keystore -srckeystore platform.pk12 -srcstoretype PKCS12 -srcstorepass android -alias android
+```
+
+然后签名：
+
+```shell
+# ~/Android/Sdk/build-tools/34.0.0/apksigner
+# ks-key-alias对应前面第二行指令指定的name
+apksigner sign --ks platform.keystore --ks-key-alias android --ks-pass pass:android --key-pass pass:android --out a_signed.apk a.apk
+
+```
+
+
 
 ## aapt命令
 
